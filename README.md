@@ -27,21 +27,16 @@
 ### 方法 1：快速安裝（推薦）
 
 ```bash
-# 下載 skill
-curl -L -o /tmp/workspace-init.zip https://github.com/你的名/workspace-init/releases/latest/download/workspace-init.zip
-
-# 解壓到 Claude Code skills 目錄
-unzip /tmp/workspace-init.zip -d ~/.claude/
+curl -L -o /tmp/hkinit.zip https://github.com/ricehung29/workspace-hkinit-skill/archive/refs/heads/main.zip
+unzip /tmp/hkinit.zip -d /tmp/hkinit
+cp -r /tmp/hkinit/workspace-hkinit-skill-main/skills/workspace-init ~/.claude/skills/
 ```
 
-### 方法 2：手動安裝
+### 方法 2：直接 clone
 
 ```bash
-# 或者直接 clone repo
-git clone https://github.com/你的名/workspace-init.git /tmp/workspace-init
-
-# 複製到 skills 目錄
-cp -r /tmp/workspace-init/skills/workspace-init ~/.claude/skills/
+git clone https://github.com/ricehung29/workspace-hkinit-skill.git /tmp/hkinit
+cp -r /tmp/hkinit/skills/workspace-init ~/.claude/skills/
 ```
 
 ### 方法 3：Project-scoped（跟 repo 分享）
@@ -49,13 +44,10 @@ cp -r /tmp/workspace-init/skills/workspace-init ~/.claude/skills/
 如果你想將 skill 綁定喺某個 project，其他人 clone 就有：
 
 ```bash
-# 喺你 project root 執行
 cp -r ~/.claude/skills/workspace-init .claude/skills/
 git add .claude/skills/workspace-init
 git commit -m "add workspace-init skill"
 ```
-
-然後其他人 clone 你個 repo 就會自動有呢個 skill。
 
 ## 首次使用
 
