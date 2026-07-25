@@ -5,6 +5,8 @@
 set -euo pipefail
 
 CONFIG_DIR="$HOME/.config/claude"
+SKILL_DIR="$HOME/.claude/skills/workspace-init"
+PROFILE="$CONFIG_DIR/workspace-init-profile.json"
 PROFILE="$CONFIG_DIR/workspace-init-profile.json"
 MULTI_PROFILE_DIR="$CONFIG_DIR/workspace-profiles"
 CACHE_FILE="$CONFIG_DIR/workspace-cache.json"
@@ -67,9 +69,70 @@ get_project_key() {
 }
 
 project_profile_path() {
-  local key
+  local key dir="${1:-$(pwd)}"
   key=$(get_project_key "$1" | md5sum 2>/dev/null | head -c 16 || echo "default")
   echo "$MULTI_PROFILE_DIR/$key.json"
+}
+
+# 新：.claude/project-profile.json（非 Git project 專用，跟 project 走）
+local_project_profile_path() {
+  local dir="${1:-$(pwd)}"
+  echo "$dir/.claude/project-profile.json"
+}
+
+# 新：優先級 search
+find_project_profile() {
+  local dir="${1:-$(pwd)}"
+
+  # 優先 1：.claude/project-profile.json（跟 project 走，Git 同非 Git 都適用）
+  local local_path
+  local_path=$(local_project_profile_path "$dir")
+  if [[ -f "$local_path" ]]; then
+    cat "$local_path"
+    return 0
+  fi
+
+  # 優先 2：multi-project profile（Git project 專用）
+  if git -C "$dir" rev-parse --show-toplevel 2>/dev/null >/dev/null; then
+    local mp_path
+    mp_path=$(project_profile_path "$dir")
+    if [[ -f "$mp_path" ]]; then
+      cat "$mp_path"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+# 新：save 去 .claude/project-profile.json（自動 merge global profile）
+save_local_project_profile() {
+  local dir="$1" json="$2"
+  local path
+  path=$(local_project_profile_path "$dir")
+
+  # Merge: 如果 global profile 存在，用佢嘅 user_name / company / language / preferred_form / tone 做 default
+  if [[ -f "$PROFILE" ]]; then
+    local merged
+    merged=$(jq -n --argjson given "$json" --argjson global "$(cat "$PROFILE")" '
+      {
+        user_name: ($given.user_name // $global.user_name // ""),
+        company: ($given.company // $global.company // ""),
+        project: ($given.project // ""),
+        language: ($given.language // $global.language // ""),
+        preferred_form: ($given.preferred_form // $global.preferred_form // ""),
+        tone: ($given.tone // $global.tone // "casual"),
+        project_details: ($given.project_details // $given.project // ""),
+        extra_skills: ($given.extra_skills // $global.extra_skills // {})
+      }
+    ')
+    json="$merged"
+  fi
+
+  mkdir -p "$(dirname "$path")"
+  echo "$json" > "$path"
+  chmod 600 "$path"
+  echo -e "${GREEN}✓ Project profile saved: ${BOLD}$path${NC} ${DIM}(跟 project 走)${NC}"
 }
 
 load_project_profile() {
@@ -315,9 +378,9 @@ init_context() {
   git_data=$(detect_git_context "$dir")
   local project_profile_data="null"
 
-  # 睇下有冇 multi-project profile
-  if load_project_profile "$dir" >/dev/null 2>&1; then
-    project_profile_data=$(load_project_profile "$dir")
+  # 優先 search：.claude/project-profile.json > multi-project profile
+  if find_project_profile "$dir" >/dev/null 2>&1; then
+    project_profile_data=$(find_project_profile "$dir")
   fi
 
   # Build 完整 context
@@ -378,11 +441,21 @@ main() {
     --list-projects)
       list_projects
       ;;
+    --update)
+      echo -e "${CYAN}⬇️  Updating workspace-init...${NC}"
+      bash "$SKILL_DIR/scripts/update.sh"
+      ;;
     --save-project)
       local dir="${2:-$(pwd)}"
       local json="${3:-}"
       [[ -z "$json" ]] && { echo -e "${RED}❌ 需要 JSON data${NC}"; exit 1; }
       save_project_profile "$dir" "$json"
+      ;;
+    --save-local|--sl)
+      local dir="${2:-$(pwd)}"
+      local json="${3:-}"
+      [[ -z "$json" ]] && { echo -e "${RED}❌ 需要 JSON data${NC}"; exit 1; }
+      save_local_project_profile "$dir" "$json"
       ;;
     *)
       echo "workspace-init profile manager v2"
@@ -399,7 +472,9 @@ main() {
       echo "  --export [file]             匯出 profile"
       echo "  --import <file>             匯入 profile"
       echo "  --list-projects             列出所有 project profiles"
-      echo "  --save-project <dir> <json> 儲存 project-specific profile"
+      echo "  --save-project <dir> <json> 儲存 project-specific profile（~/.config/claude/）"
+      echo "  --save-local|--sl <dir> <json> 儲存 project profile 喺 .claude/ 入面（自動 merge global profile）"
+      echo "  --update                    自動更新 workspace-init 到最新版"
       ;;
   esac
 }

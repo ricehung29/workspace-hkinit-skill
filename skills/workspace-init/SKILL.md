@@ -18,7 +18,9 @@ description: "每次對話開始時注入 workspace 背景、用戶偏好、語�
 /init --export [file.json]        — 匯出 profile
 /init --import <file.json>        — 匯入 profile
 /init --list-projects             — 列出所有已儲存嘅 project profiles
-/init --save-project <dir> <json> — 儲存 project-specific profile
+/init --save-project <dir> <json>   — 儲存 project-specific profile（`~/.config/claude/`）
+/init --save-local|--sl <dir> <json> — 儲存 project profile 喺 `.claude/` 入面，自動 merge global profile
+/init --update                      — 自動更新 workspace-init 到最新版
 ```
 
 ## 首次使用流程
@@ -86,6 +88,21 @@ description: "每次對話開始時注入 workspace 背景、用戶偏好、語�
 ```
 
 當你喺唔同 folder 開對話，會自動 load 對應嘅 project profile。
+
+### Local Project Profile（跟 project 走）
+
+非 Git project 或者你想 profile 跟 repo 一齊 share，可以用 `--save-local`：
+
+```
+/init --save-local /path/to/project '{"project":"My App","project_details":"..."}'
+```
+
+Profile 會 save 喺 project 嘅 `.claude/project-profile.json`，無論係 Git 定非 Git project 都 work。
+
+**載入優先級：**
+1. `.claude/project-profile.json`（最高優先，跟 project 走）
+2. `~/.config/claude/workspace-profiles/<hash>.json`（Git project 專用）
+3. 冇 → 用 global profile 嘅預設值
 
 ### Skill 推薦系統
 

@@ -1,6 +1,6 @@
 # workspace-init — Claude Code Workspace Personalisation Skill
 
-![GitHub release](https://img.shields.io/badge/version-2.0.0-blue)
+![GitHub release](https://img.shields.io/badge/version-2.1.0-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-✓-purple)
 
 **workspace-init** 係一個 Claude Code skill，每次對話開始時自動注入你嘅 workspace 背景、身份、語言偏好同 project context。
@@ -82,7 +82,16 @@ Skill 會問你：
 | `/init --import my-backup.json` | 匯入 profile |
 | `/init --list-projects` | 列出所有已儲存嘅 project profiles |
 | `/init --save-project <dir> <json>` | 儲存 project-specific profile（`~/.config/claude/`） |
-| `/init --save-local|--sl <dir> <json>` | 儲存 profile 喺 `.claude/` 入面，自動 merge global profile 嘅 user_name/company/language |
+| `/init --save-local|--sl <dir> <json>` | 儲存 profile 喺 `.claude/` 入面，自動 merge global profile |
+| `/init --update` | 自動更新 workspace-init 到最新版 |
+
+## 更新
+
+```bash
+/init --update
+# 或者手動：
+curl -sL https://raw.githubusercontent.com/ricehung29/workspace-hkinit-skill/main/skills/workspace-init/scripts/update.sh | bash
+```
 
 ## 技術細節
 
