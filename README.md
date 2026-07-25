@@ -81,6 +81,8 @@ Skill 會問你：
 | `/init --export my-backup.json` | 匯出到指定檔案 |
 | `/init --import my-backup.json` | 匯入 profile |
 | `/init --list-projects` | 列出所有已儲存嘅 project profiles |
+| `/init --save-project <dir> <json>` | 儲存 project-specific profile（`~/.config/claude/`） |
+| `/init --save-local|--sl <dir> <json>` | 儲存 profile 喺 `.claude/` 入面，自動 merge global profile 嘅 user_name/company/language |
 
 ## 技術細節
 
@@ -129,11 +131,31 @@ Skill 會問你：
 
 當你喺唔同 folder 開對話，會自動 load 對應嘅 project profile。
 
+### Local Project Profile（跟 project 走）
+
+非 Git project 或者你想 profile 跟 repo 一齊 share，可以用 `--save-local`（或 `--sl`）：
+
+```bash
+/init --save-local /path/to/project '{"project":"My App","project_details":"..."}'
+# 或者短版
+/init --sl /path/to/project '{"project":"My App","project_details":"..."}'
+```
+
+`--save-local` 會自動 merge global profile 嘅 `user_name`、`company`、`language`，所以你只需提供 project 相關嘅 field 就得。
+
+Profile 會 save 喺 project 嘅 `.claude/project-profile.json`，無論係 Git 定非 Git project 都 work。
+
+**載入優先級：**
+1. `.claude/project-profile.json`（最高優先，跟 project 走）
+2. `~/.config/claude/workspace-profiles/<hash>.json`（Git project 專用）
+3. 冇 → 用 global profile 嘅預設值
+
 ### Profile 位置
 
 ```
 ~/.config/claude/workspace-init-profile.json          # 主 profile
-~/.config/claude/workspace-profiles/                  # multi-project profiles
+~/.config/claude/workspace-profiles/                  # multi-project profiles（舊方式）
+.claude/project-profile.json                          # local project profile（新方式，跟 project 走）
 ```
 
 權限：`chmod 600`（僅 owner 可讀寫），唔會俾 git 追蹤。
